@@ -5,7 +5,9 @@
 #include <numeric>
 #include <vector>
 
+#ifndef PART
 #define PART 2
+#endif
 
 int main(int argc, const char *argv[]) {
   std::fstream File;
@@ -25,8 +27,9 @@ int main(int argc, const char *argv[]) {
     Sonar[i] = Sonar[i] + Sonar[i + 1] + Sonar[i + 2];
 #endif
 
+  constexpr auto BackShift = PART == 1 ? -1 : -3;
   int Result = std::inner_product(std::cbegin(Sonar),
-                                  std::next(std::cend(Sonar), -3),
+                                  std::next(std::cend(Sonar), BackShift),
                                   std::next(std::cbegin(Sonar)),
                                   int{0},
                                   std::plus<int>{},
