@@ -14,10 +14,9 @@ posDepAimScan = foldl posDepAim (0, 0, 0)
           posDepAim (p, d, a) ("up", x) = (p, d, a - x)
 
 main = do
-    cmds <- map words . lines <$> readFile "input.txt"
-    let cs = map (\(x:y:[]) -> (x, read y :: Int)) cmds
-        (p1, d1) = posDepScan cs
-        (p2, d2, a2) = posDepAimScan cs
+    cmds <- map ((\(x:y:[]) -> (x, read y :: Int)) . words) . lines <$> readFile "input.txt"
+    let (p1, d1) = posDepScan cmds
+        (p2, d2, a2) = posDepAimScan cmds
     putStrLn "Part 1 = "
     print $ p1 * d1
     putStrLn "Part 2 = "
