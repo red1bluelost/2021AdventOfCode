@@ -1,79 +1,70 @@
-#include <iostream>
-#include <fstream>
-#include <iterator>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <iterator>
 #include <numeric>
 #include <vector>
 
-void part1(std::vector<std::string> &Nums, std::size_t LineLength) {
-  std::vector<int> Sums(LineLength, 0);
+bool isOne(char C) { return C == '1'; }
+std::size_t toBin(char C) { return isOne(C) ? 1 : 0; }
+char toChar(bool B) { return B ? '1' : '0'; }
 
-  for (const auto &N: Nums)
-    for (std::size_t i = 0; i < LineLength; ++i)
-      Sums[i] += N[i] == '1' ? 1 : 0;
-
-  std::size_t Gamma = 0, Epsilon = 0;
-  for (std::size_t i = 0, s = LineLength - 1; i < LineLength; ++i, --s) {
-    bool OC = Sums[i] * 2 > Nums.size();
-    Gamma += (OC ? 1 : 0) << s;
-    Epsilon += (!OC ? 1 : 0) << s;
-  }
-
-  std::cout << "Part 1 = " << (Gamma * Epsilon) << "\n";
+std::size_t binStr2Num(const std::string &Str) {
+  return std::accumulate(std::begin(Str),
+                         std::end(Str),
+                         std::size_t{0},
+                         [Shift = Str.length() - 1](std::size_t Acc, char C) mutable {
+                           return Acc + (toBin(C) << Shift--);
+                         });
 }
 
-void part2(std::vector<std::string> &Nums, std::size_t LineLength) {
+std::size_t part1(std::vector<std::string> &Nums, std::size_t LineLength) {
+  std::vector<std::size_t> Sums(LineLength, 0);
+
+  for (std::size_t i = 0; i < LineLength; ++i)
+    Sums[i] = std::count_if(std::cbegin(Nums), std::cend(Nums), [i](const std::string &S) { return isOne(S[i]); });
+
+  std::string Gamma, Epsilon;
+  for (std::size_t N: Sums) {
+    bool OC = N * 2 > Nums.size();
+    Gamma.push_back(toChar(OC));
+    Epsilon.push_back(toChar(!OC));
+  }
+
+  return binStr2Num(Gamma) * binStr2Num(Epsilon);
+}
+
+template<bool MostCommon>
+void partitionPart2(std::vector<std::string>::iterator &B, std::vector<std::string>::iterator &E) {
+  for (std::size_t I = 1; std::distance(B, E) > 1; ++I) {
+    std::size_t Sum =
+        std::transform_reduce(B, E, std::size_t{0},
+                              std::plus<>{},
+                              [I](const std::string &S) { return isOne(S[I]); });
+    E = std::partition(B, E,
+                       [C = toChar(MostCommon == Sum * 2 >= std::distance(B, E)), I](
+                           const std::string &S) {
+                         return S[I] == C;
+                       });
+
+  }
+}
+
+std::size_t part2(std::vector<std::string> &Nums) {
   auto OGBegin = std::begin(Nums), OGEnd = std::end(Nums), COBegin = std::begin(Nums), COEnd = std::end(Nums);
-  std::size_t SumI =
-      std::transform_reduce(OGBegin,
-                            OGEnd,
-                            std::size_t{0},
-                            std::plus<>{},
-                            [](const std::string &S) { return S[0] == '1' ? 1 : 0; });
+  std::size_t SumI = std::transform_reduce(OGBegin, OGEnd, std::size_t{0},
+                                           std::plus<>{},
+                                           [](const std::string &S) { return S[0] == '1' ? 1 : 0; });
   OGEnd = COBegin = std::partition(OGBegin,
                                    OGEnd,
-                                   [K = SumI * 2 >= Nums.size()](const std::string &S) {
-                                     return S[0] == (K ? '1' : '0');
+                                   [C = toChar(SumI * 2 >= Nums.size())](const std::string &S) {
+                                     return S[0] == C;
                                    });
 
-  for (std::size_t I = 1; std::distance(OGBegin, OGEnd) > 1; ++I) {
-    std::size_t Sum =
-        std::transform_reduce(OGBegin,
-                              OGEnd,
-                              std::size_t{0},
-                              std::plus<>{},
-                              [I](const std::string &S) { return S[I] == '1' ? 1 : 0; });
-    OGEnd = std::partition(OGBegin,
-                           OGEnd,
-                           [K = Sum * 2 >= std::distance(OGBegin, OGEnd), I](const std::string &S) {
-                             return S[I] == (K ? '1' : '0');
-                           });
+  partitionPart2<true>(OGBegin, OGEnd);
+  partitionPart2<false>(COBegin, COEnd);
 
-  }
-
-  for (std::size_t I = 1; std::distance(COBegin, COEnd) > 1; ++I) {
-    std::size_t Sum =
-        std::transform_reduce(COBegin,
-                              COEnd,
-                              std::size_t{0},
-                              std::plus<>{},
-                              [I](const std::string &S) { return S[I] == '1' ? 1 : 0; });
-    COEnd = std::partition(COBegin,
-                           COEnd,
-                           [K = Sum * 2 >= std::distance(COBegin, COEnd), I](const std::string &S) {
-                             return S[I] == (!K ? '1' : '0');
-                           });
-  }
-
-  const std::string &OGStr = *OGBegin;
-  const std::string &COStr = *COBegin;
-  std::size_t OGR = 0, COR = 0;
-  for (std::size_t i = 0, s = LineLength - 1; i < LineLength; ++i, --s) {
-    OGR += (OGStr[i] == '1' ? 1 : 0) << s;
-    COR += (COStr[i] == '1' ? 1 : 0) << s;
-  }
-
-  std::cout << "Part 2 = " << (OGR * COR) << "\n";
+  return binStr2Num(*OGBegin) * binStr2Num(*COBegin);
 }
 
 int main(int argc, const char *argv[]) {
@@ -92,9 +83,8 @@ int main(int argc, const char *argv[]) {
     Nums.push_back(S);
   std::size_t LineLength = S.length();
 
-  part1(Nums, LineLength);
-
-  part2(Nums, LineLength);
+  std::cout << "Part 1 = " << part1(Nums, LineLength) << "\n";
+  std::cout << "Part 2 = " << part2(Nums) << "\n";
 
   return 0;
 }
