@@ -26,13 +26,6 @@ struct Line {
   bool isIncreasingOnX() const { return Start.X <= End.X; }
   bool isIncreasingOnY() const { return Start.Y <= End.Y; }
 
-  std::pair<int, int> increasingRangeX() const {
-    return isIncreasingOnX() ? std::make_pair(Start.X, End.X) : std::make_pair(End.X, Start.X);
-  }
-  std::pair<int, int> increasingRangeY() const {
-    return isIncreasingOnY() ? std::make_pair(Start.Y, End.Y) : std::make_pair(End.Y, Start.Y);
-  }
-
   class Iterator {
     friend Line;
     const Line &Parent;
