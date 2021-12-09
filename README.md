@@ -10,3 +10,4 @@ My solutions to the 2021 Advent of Code competition
 | 05  | C++      |
 | 06  | Haskell  |
 | 07  | Haskell  |
+| 08  | Haskell  |
