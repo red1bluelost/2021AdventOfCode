@@ -63,9 +63,7 @@ public:
   }
 
   bool didAllFlash() {
-    return std::ranges::all_of(Flashed,
-                               [](const auto &R) -> bool { return std::ranges::all_of(R, std::identity{}); });
-
+    return std::ranges::all_of(Flashed, std::bind(std::ranges::all_of, std::placeholders::_1, std::identity{}));
   }
 };
 
