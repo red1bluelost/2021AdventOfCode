@@ -16,3 +16,4 @@ My solutions to the 2021 Advent of Code competition
 | 11  | C++      |
 | 12  | Go       |
 | 13  | Haskell  |
+| 14  | Haskell  |
