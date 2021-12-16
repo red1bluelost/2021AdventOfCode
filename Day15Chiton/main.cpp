@@ -40,22 +40,17 @@ void solve(std::size_t L, std::size_t W, const Matrix &OrigMat, Matrix &DMat) {
       for (std::size_t J = 0; J < W; ++J) {
         int *D = DMat.at(I, J);
         const int *V = OrigMat.at(I, J);
-        if (int *A = DMat.at(I - 1, J); A && *V + *A < *D) {
-          *D = *V + *A;
-          Changed = true;
-        }
-        if (int *A = DMat.at(I + 1, J); A && *V + *A < *D) {
-          *D = *V + *A;
-          Changed = true;
-        }
-        if (int *A = DMat.at(I, J - 1); A && *V + *A < *D) {
-          *D = *V + *A;
-          Changed = true;
-        }
-        if (int *A = DMat.at(I, J + 1); A && *V + *A < *D) {
-          *D = *V + *A;
-          Changed = true;
-        }
+        auto Move = [&](std::size_t X, std::size_t Y) -> bool {
+          if (int *A = DMat.at(X, Y); A && *V + *A < *D) {
+            *D = *V + *A;
+            return true;
+          }
+          return false;
+        };
+        Changed |= Move(I - 1, J);
+        Changed |= Move(I + 1, J);
+        Changed |= Move(I, J - 1);
+        Changed |= Move(I, J + 1);
       }
     }
   }
@@ -85,25 +80,22 @@ int main(int argc, const char *argv[]) {
 
   std::vector<int> ValsIn5x;
   ValsIn5x.reserve(L * 5 * W * 5);
-  auto Wrap = [](int I) { return I == 9 ? 1 : I + 1; };
   for (std::size_t I = 0; I < L; ++I)
     for (std::size_t J = 0; J < 5; ++J)
-      if (J == 0 || J == 1)
-        std::transform(std::next(std::begin(ValsIn), I * W),
-                       std::next(std::begin(ValsIn), I * W + W),
-                       std::back_inserter(ValsIn5x),
-                       J == 0 ? std::function<int(int)>(std::identity{}) : Wrap);
+      if (J == 0)
+        std::copy_n(std::next(std::begin(ValsIn), I * W),
+                    W,
+                    std::back_inserter(ValsIn5x));
       else
         std::transform(std::next(std::end(ValsIn5x), -W),
                        std::end(ValsIn5x),
                        std::back_inserter(ValsIn5x),
-                       Wrap);
-
+                       [](int I) { return I == 9 ? 1 : I + 1; });
   for (std::size_t J = 1; J < 5; ++J)
     std::transform(std::next(std::end(ValsIn5x), -W * 5 * L),
                    std::end(ValsIn5x),
                    std::back_inserter(ValsIn5x),
-                   Wrap);
+                   [](int I) { return I == 9 ? 1 : I + 1; });
 
   Matrix DMat(L, W, std::vector<int>(ValsIn.size(), std::numeric_limits<int>::max() - 11));
   Matrix OrigMat(L, W, std::move(ValsIn));
