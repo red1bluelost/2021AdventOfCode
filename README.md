@@ -21,3 +21,4 @@ My solutions to the 2021 Advent of Code competition
 | 16  | C++      |
 | 17  | Go       |
 | 18  | C++      |
+| 19  | C++      |
