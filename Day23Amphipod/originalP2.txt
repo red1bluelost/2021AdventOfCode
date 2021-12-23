@@ -1,0 +1,165 @@
+#############
+#...........#
+###A#D#B#C###
+  #D#C#B#A#
+  #D#B#A#C#
+  #B#C#D#A#
+  #########
+
+
+
+#include <algorithm>
+#include <array>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <numeric>
+#include <utility>
+#include <ranges>
+#include <cassert>
+#include <memory>
+
+struct Space;
+
+enum AmphipodType { AMBER = 1, BRONZE = 10, COPPER = 100, DESERT = 1000 };
+
+constexpr char ampToChar(AmphipodType AT) {
+  switch (AT) {
+  case AMBER:return 'A';
+  case BRONZE:return 'B';
+  case COPPER:return 'C';
+  case DESERT:return 'D';
+  }
+  __builtin_unreachable();
+}
+constexpr AmphipodType charToAmp(char C) {
+  switch (C) {
+  case 'A':return AMBER;
+  case 'B':return BRONZE;
+  case 'C':return COPPER;
+  case 'D':return DESERT;
+  }
+  __builtin_unreachable();
+}
+
+struct Amphipod {
+  AmphipodType Type;
+  Space *Loc;
+};
+
+enum SpaceType { HALLWAY, ENTRY, SRA, SRB, SRC, SRD };
+struct Space {
+  SpaceType T;
+  Space *Left = nullptr, *Right = nullptr, *Up = nullptr, *Down = nullptr;
+  Amphipod *Resident = nullptr;
+};
+
+struct SpaceManager {
+  std::array<std::unique_ptr<Space>, 19> Rooms;
+  std::array<std::unique_ptr<Amphipod>, 8> Amphipods;
+};
+
+SpaceManager newSpaceManager(const std::array<char, 8> &Cs);
+
+template<class CharT, class Traits>
+std::basic_ostream<CharT, Traits> &
+operator<<(std::basic_ostream<CharT, Traits> &OS, const SpaceManager &C);
+
+int main(int argc, const char *argv[]) {
+  std::ios_base::sync_with_stdio(false);
+  std::cin.tie(nullptr);
+  std::cout.tie(nullptr);
+
+  std::fstream File;
+  if (argc > 1)
+    File.open(argv[1]);
+  std::istream &Input = argc == 1 ? std::cin : File;
+
+  std::array<char, 8> StartPos = std::invoke([&Input] {
+    std::array<char, 8> Cs;
+    std::stringstream SS;
+    std::string S;
+    while (std::getline(Input, S))
+      SS << S;
+    S = SS.str();
+    std::sscanf(S.c_str(), "#############\r"
+                           "#...........#\r"
+                           "###%c#%c#%c#%c###\r"
+                           "  #%c#%c#%c#%c#\r"
+                           "  #########",
+                &Cs[1], &Cs[3], &Cs[5], &Cs[7],
+                &Cs[0], &Cs[2], &Cs[4], &Cs[6]);
+    return Cs;
+  });
+
+  SpaceManager SM = newSpaceManager(StartPos);
+  std::cout << SM << std::endl;
+
+  return 0;
+}
+
+SpaceManager newSpaceManager(const std::array<char, 8> &Cs) {
+  SpaceManager SM;
+  SM.Rooms[0] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[1] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[2] = std::make_unique<Space>(Space{ENTRY});
+  SM.Rooms[3] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[4] = std::make_unique<Space>(Space{ENTRY});
+  SM.Rooms[5] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[6] = std::make_unique<Space>(Space{ENTRY});
+  SM.Rooms[7] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[8] = std::make_unique<Space>(Space{ENTRY});
+  SM.Rooms[9] = std::make_unique<Space>(Space{HALLWAY});
+  SM.Rooms[10] = std::make_unique<Space>(Space{HALLWAY});
+
+  SM.Rooms[11] = std::make_unique<Space>(Space{SRA});
+  SM.Rooms[12] = std::make_unique<Space>(Space{SRA});
+  SM.Rooms[13] = std::make_unique<Space>(Space{SRB});
+  SM.Rooms[14] = std::make_unique<Space>(Space{SRB});
+  SM.Rooms[15] = std::make_unique<Space>(Space{SRC});
+  SM.Rooms[16] = std::make_unique<Space>(Space{SRC});
+  SM.Rooms[17] = std::make_unique<Space>(Space{SRD});
+  SM.Rooms[18] = std::make_unique<Space>(Space{SRD});
+
+  for (std::size_t I = 0; I < 11; ++I) {
+    if (I > 0)
+      SM.Rooms[I]->Left = SM.Rooms[I - 1].get();
+    if (I < 10)
+      SM.Rooms[I]->Right = SM.Rooms[I - 1].get();
+  }
+
+  for (std::size_t I = 3; I <= 9; I += 2) {
+    std::size_t D = 12 + I - 3;
+    SM.Rooms[I]->Down = SM.Rooms[D].get();
+    SM.Rooms[D]->Up = SM.Rooms[I].get();
+    SM.Rooms[D]->Down = SM.Rooms[D - 1].get();
+    SM.Rooms[D - 1]->Up = SM.Rooms[D].get();
+  }
+
+  for (std::size_t I = 0; I < Cs.size(); ++I) {
+    SM.Amphipods[I] = std::make_unique<Amphipod>(Amphipod{charToAmp(Cs[I]), SM.Rooms[I + 11].get()});
+    SM.Rooms[I + 11]->Resident = SM.Amphipods[I].get();
+  }
+
+  return SM;
+}
+
+template<class CharT, class Traits>
+std::basic_ostream<CharT, Traits> &
+operator<<(std::basic_ostream<CharT, Traits> &OS, const SpaceManager &C) {
+  auto P = [](const Amphipod *A) { return A ? ampToChar(A->Type) : '.'; };
+  OS << "#############\n#";
+  for (std::size_t I = 0; I < 11; ++I)
+    OS << P(C.Rooms[I]->Resident);
+  OS << "#\n###";
+  for (std::size_t I = 12; I <= 18; I += 2)
+    OS << P(C.Rooms[I]->Resident) << '#';
+  OS << "##\n  #";
+  for (std::size_t I = 11; I <= 17; I += 2)
+    OS << P(C.Rooms[I]->Resident) << '#';
+  OS << "\n  #########";
+  return OS;
+}
