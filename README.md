@@ -26,3 +26,4 @@ My solutions to the 2021 Advent of Code competition
 | 21  | C++      |
 | 22  | C++      |
 | 23  | Failed   |
+| 24  | Failed   |
